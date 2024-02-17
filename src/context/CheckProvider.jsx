@@ -80,7 +80,7 @@ const CheckProvider = ({ children }) => {
 
     await addQuickMessage("[-] Stack Empty: " + JSON.stringify(stack) + " [-]");
     stack.push({
-      key: "INIT",
+      key: "A",
       isTerminal: false,
     });
     await addQuickMessage("[-] Stack Init: " + JSON.stringify(stack) + " [-]");
