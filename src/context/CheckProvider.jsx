@@ -69,6 +69,9 @@ const CheckProvider = ({ children }) => {
       } else if (!x.isTerminal) {
         let production = await findProduction(x.symbol, codeStack[0]);
         await addDebugMessage(`La produccion es: ${JSON.stringify(production)}`);
+        if (production === null) {
+          break;
+        }
         for (let i = production.length - 1; i >= 0; i--) {
           stack.push(production[i]);
         }
@@ -96,7 +99,7 @@ const CheckProvider = ({ children }) => {
     if (tokenIndex !== -1) {
       let production = preddict_table[noTerminal][tokenIndex];
       await addDebugMessage(`La produccion es: ${JSON.stringify(production)}`);
-      if (grammar[production] !== null) {
+      if (grammar[production] !== null && grammar[production] !== undefined) {
         return grammar[production];
       }
     }

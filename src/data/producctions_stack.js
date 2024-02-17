@@ -3,7 +3,7 @@ const grammar = {
     { symbol: "T", isTerminal: false },
     { symbol: "N", isTerminal: false },
     { symbol: "M", isTerminal: false },
-    { regex: /^;$/, isTerminal: true, length: 1 },
+    { regex: /^;$/, isTerminal: true },
   ],
   N: [
     { symbol: "L", isTerminal: false },
@@ -14,9 +14,9 @@ const grammar = {
     { symbol: "R", isTerminal: false },
   ],
   M: [
-    { regex: /^\[$/, isTerminal: true, length: 1 },
+    { regex: /^\[$/, isTerminal: true },
     { symbol: "E", isTerminal: false },
-    { regex: /^\]$/, isTerminal: true, length: 1 },
+    { regex: /^\]$/, isTerminal: true },
   ],
   E: [
     { symbol: "D", isTerminal: false },
@@ -27,11 +27,11 @@ const grammar = {
     { symbol: "D", isTerminal: false },
     { symbol: "C", isTerminal: false },
   ],
-  T: [{ regex: /^let$/, isTerminal: true, length: 3 }],
-  L: [{ regex: /^[a-z]+$/, isTerminal: true, length: 1 }],
-  D: [{ regex: /^[0-9]+$/, isTerminal: true, length: 1 }],
+  T: [{ regex: /^let$/, isTerminal: true }],
+  L: [{ regex: /^[a-z]+$/, isTerminal: true }],
+  D: [{ regex: /^[0-9]+$/, isTerminal: true }],
   X: [
-    { regex: /^,$/, isTerminal: true, length: 1 },
+    { regex: /^,$/, isTerminal: true },
     { symbol: "D", isTerminal: false },
     { symbol: "C", isTerminal: false },
     { symbol: "X", isTerminal: false },
