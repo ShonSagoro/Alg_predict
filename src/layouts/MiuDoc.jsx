@@ -7,7 +7,7 @@ function MiuDoc() {
       content: [
         {
           subtitle: "Arr example",
-          code: `let arr=[1,2,3,4];`,
+          code: `let arr[1,2,3,4];`,
         }
       ],
     }

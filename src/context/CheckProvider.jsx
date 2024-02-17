@@ -1,8 +1,10 @@
+/* eslint-disable no-unused-vars */
 import React, { useMemo, useState } from "react";
-import producctions from "../data/productions.js";
+import { grammar, preddict_table } from "../data/producctions_stack";
 
 import CheckContext from "./CheckContext";
 
+// eslint-disable-next-line react/prop-types
 const CheckProvider = ({ children }) => {
   let stack = [];
 
@@ -19,228 +21,86 @@ const CheckProvider = ({ children }) => {
   };
 
   const addQuickMessage = async (message) => {
+    message = `>>>> ${message} \n`;
     await executeWithDelay(setConsoleMessage, JSON.stringify(message));
   };
+
   const addMessage = async (message) => {
-    if(!isQuickEnable){
-      await executeWithDelay(setConsoleMessage, JSON.stringify(message));
+    message = `>> ${message} \n`;
+    if (!isQuickEnable) {
+      await executeWithDelay(setConsoleMessage, message);
     }
   };
 
-  
+  const addErrorMessage = async (message) => {
+    message = `[ERROR] >> ${message} \n`;
+    await executeWithDelay(setConsoleMessage, message);
+  };
+
 
   const addDebugMessage = async (message) => {
+    message = "[DEBUG] >> " + message;
     if (isDebugEnable) {
       await executeWithDelay(
         setConsoleMessage,
-        JSON.stringify(">> " + message)
+        message
       );
-    }
-  };
-
-  const printStack = async () => {
-    if (!isQuickEnable) {
-      let reversestack = stack.slice().reverse();
-      await addMessage(" ");
-      await addMessage("[] Stack-------------------------------------[]");
-      for (let stackElement of reversestack) {
-        if (Array.isArray(stackElement)) {
-          let stackElementReverse=stackElement.slice().reverse();
-          await addMessage(
-            "  []Options element-------------------------------------"
-          );
-          for (let stackElementOption of stackElement) {
-            let stackElementOptionReverse =stackElementOption.slice().reverse();
-            await addMessage("[Option]: ");
-            await addMessage("[");
-            for (let dataOption of stackElementOption){
-              await addMessage(dataOption);
-            }
-            await addMessage("]");
-          }
-          await addMessage(
-            "  []Options element-------------------------------------"
-          );
-        } else {
-          await addMessage("Stack Content: " + stackElement.key);
-          await addMessage("-is Terminal?: " + stackElement.isTerminal);
-          if(stackElement.isTerminal) {
-            await addMessage("---REGEX?: " + stackElement.regex);
-          }
-        }
-      }
-      await addMessage("[] FIN-Stack-------------------------------------[]");
-      await addMessage(" ");
     }
   };
 
   async function checkGrammar(code) {
-    let positionFail = -1;
-    stack.splice(0, stack.length);
+    let stack = [
+      { symbol: "EOF", isTerminal: true },
+      { symbol: "A", isTerminal: false },
+    ];
+    let codeStack = code
+      .match(/([a-zA-Z_]\w*|\S)/g)
+      .join(".")
+      .split(".");
+    await addMessage("La pila es:" + JSON.stringify(stack));
+    await addMessage("La cadena a evaluar es:" + JSON.stringify(codeStack));
 
-    await addQuickMessage("[-] Stack Empty: " + JSON.stringify(stack) + " [-]");
-    stack.push({
-      key: "A",
-      isTerminal: false,
-    });
-    await addQuickMessage("[-] Stack Init: " + JSON.stringify(stack) + " [-]");
-
-    const codeLines = code.split("\n");
-    let state;
-    for (let i = 0; i < codeLines.length; i++) {
-      if (!/^\s*$/.test(codeLines[i])) {
-        await addDebugMessage("code");
-        await addDebugMessage(codeLines);
-        let lineClean = codeLines[i].replace(/[\r\n\t]/gm, "");
-        await addDebugMessage("line Check");
-        await addDebugMessage(lineClean);
-        state = await checkGrammarLine(lineClean);
-        if (!state) {
-          await addDebugMessage(
-            "[x] Falle en la linea: " + JSON.stringify(i + 1) + " [x]"
-          );
-          positionFail = i + 1;
-          break;
+    while (stack.length > 0) {
+      let x = stack.pop();
+      await addDebugMessage(` El simbolo a evaluar es: ${JSON.stringify(x.symbol)}, es terminal?: ${x.isTerminal? "si" : "no"}, su regex es: ${x.regex? x.regex : "no tiene"}`);
+      await addDebugMessage("La cadena a evaluar es:" + JSON.stringify(codeStack));
+      if (x.symbol === "EOF") {
+        return "Code valid";
+      } else if (!x.isTerminal) {
+        let production = await findProduction(x.symbol, codeStack[0]);
+        await addDebugMessage(`La produccion es: ${JSON.stringify(production)}`);
+        for (let i = production.length - 1; i >= 0; i--) {
+          stack.push(production[i]);
         }
-        await addDebugMessage("El stack quedo asi: " + JSON.stringify(stack));
-      }
-    }
-
-    if (!Array.isArray(stack[0])) {
-      if(stack.key="INIT"){
-        stack.pop();
-      }
-    }
-
-    await printStack();
-    await addQuickMessage("[F] Stack final: " + JSON.stringify(stack) + " [F]");
-
-    return stack.length === 0
-      ? "todo ok"
-      : "OH no tenemos un problema";
-  }
-
-  async function checkGrammarLine(code) {
-    let character;
-    let symbol;
-    for (let i = 0; i < code.length; i++) {
-      await printStack();
-      character = code[i];
-      symbol = stack.pop();
-      await addMessage(
-        "[c] Character Actual: " + JSON.stringify(character) + " [c]"
-      );
-      await addMessage("[p] Posicion Actual: " + JSON.stringify(i) + " [p]");
-
-      if (Array.isArray(symbol)) {
-        let pass = await checkOrOptions(symbol, code, i);
-        if (!pass) {
-          await addDebugMessage(
-            "[x] Error: con las opciones en produccion [x]"
-          );
-          return false;
-        } else {
-          symbol = stack.pop();
-          i += symbol.length - 1;
-        }
-      } else if (symbol.isTerminal) {
-        await addDebugMessage(
-          "[o] Terminal: " + JSON.stringify(symbol) + " [o]"
-        );
-        await addDebugMessage(
-          "[c] Letra: " + JSON.stringify(character) + " [c]"
-        );
-        if (symbol.length != undefined) {
-          character = code.slice(i, i + symbol.length);
-          await addDebugMessage(
-            "[c] Palabra: " + JSON.stringify(character) + " [c]"
-          );
-          await addDebugMessage(
-            "[r] Regex: " + symbol.regex.toString() + " [r]"
-          );
-          await addDebugMessage(
-            "[R] Resultado de test: " +
-              JSON.stringify(symbol.regex.test(character)) +
-              " [R]"
-          );
-          if (symbol.regex.test(character)) {
-            i += symbol.length - 1;
-          } else {
-            await addDebugMessage("[x] Error: con la terminal [x]");
-            return false;
-          }
-        }
+        await addMessage("La pila es:" + JSON.stringify(stack));
       } else {
-        i--;
-        await addDebugMessage("[i] Buscando Produccion [i]");
-        let production = findProduction(symbol);
-
-        if (production != undefined) {
-          await addDebugMessage("[i] Produccion Encontrada[i]");
-          const reversestack = production.symbols.slice().reverse();
-          for (let newSymbols of reversestack) {
-            if (newSymbols != undefined) {
-              stack.push(newSymbols);
-            }
-          }
+        let snippet = codeStack.shift();
+        await addMessage("El simbolo a evaluar es:" + JSON.stringify(snippet));
+        if (x.regex.test(snippet)) {
+          await addDebugMessage(`El simbolo ${x.regex} coincide con el token ${snippet}`);
+        } else {
+          await addErrorMessage(`El resultado: ${x.regex.test(snippet)}`);
+          await addErrorMessage(`El simbolo ${x.regex} no coincide con el token ${snippet}`);
+          await addErrorMessage(`La pila es: ${JSON.stringify(stack)}`);
+          return "Code invalid";
         }
       }
     }
-    await addDebugMessage("[ok] todo bien con: " + code + " [ok]");
-    return true;
+
+    return stack.length === 0 ? "Code valid" : "Code invalid";
   }
 
-  async function checkOrOptions(symbol, code, position) {
-    let symbolstackReverse = symbol.slice().reverse();
-    for (let orArraySymbols of symbolstackReverse) {
-      await addDebugMessage(
-        "[o] Array Option: " + JSON.stringify(orArraySymbols) + " [o]"
-      );
-      if (orArraySymbols[0].isTerminal) {
-        if (orArraySymbols[0].length != undefined) {
-          await addDebugMessage(
-            "[o] code eval: " + JSON.stringify(code) + " [o]"
-          );
-          let character = code.slice(
-            position,
-            position + orArraySymbols[0].length
-          );
-          await addDebugMessage(
-            "[o] slice code eval: " + JSON.stringify(character) + " [o]"
-          );
-          await addDebugMessage(
-            "[r] Regex: " + orArraySymbols[0].regex.toString() + " [r]"
-          );
-          if (orArraySymbols[0].regex.test(character)) {
-            const reversestack = orArraySymbols.slice().reverse();
-            await addDebugMessage(
-              "[ok] Push Option Correct: " +
-                JSON.stringify(reversestack) +
-                " [ok]"
-            );
-            for (let newSymbols of reversestack) {
-              if (newSymbols != undefined) {
-                stack.push(newSymbols);
-              }
-            }
-            return true;
-          }
-        }
+  async function findProduction(noTerminal, token) {
+    let tokenIndex = preddict_table.col.findIndex(regex => regex.test(token));
+    await addDebugMessage(`El token es: ${token}, el indice es: ${tokenIndex} y el no terminal es: ${noTerminal}`);
+    if (tokenIndex !== -1) {
+      let production = preddict_table[noTerminal][tokenIndex];
+      await addDebugMessage(`La produccion es: ${JSON.stringify(production)}`);
+      if (grammar[production] !== null) {
+        return grammar[production];
       }
     }
-    await addDebugMessage("[x] Error: con las opciones [x]");
-    await addDebugMessage("[x] Evalue:" + JSON.stringify(code) + "[x]");
-    await addDebugMessage("[x] Con:" + JSON.stringify(symbol) + " [x]");
-    return false;
-  }
-
-  function findProduction(symbol) {
-    for (let production of producctions) {
-      if (production.symbol.key === symbol.key) {
-        return production;
-      }
-    }
-    return undefined;
+    return null;
   }
 
   const value = useMemo(() => {
@@ -252,6 +112,7 @@ const CheckProvider = ({ children }) => {
       isQuickEnable,
       setIsQuickEnable,
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [consoleMessage, isDebugEnable, isQuickEnable]);
 
   return (
@@ -259,6 +120,7 @@ const CheckProvider = ({ children }) => {
   );
 };
 
+// Move the export statement outside of the function block
 export default CheckProvider;
 
 export function UseCheck() {

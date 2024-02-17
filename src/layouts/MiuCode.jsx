@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { UseCheck } from "../context/CheckProvider";
 import ScrollableFeed from "react-scrollable-feed";
@@ -16,12 +16,14 @@ function MiuCode() {
   const [messages, setMessages] = useState(["Write and check your miu Code"]);
   const editorRef = useRef(null);
   const [code, setCode] = useState(
-    `fn Main() {\n\tfmt.Print("Hola, mundo!");\n}`
+    `let arr[1,2,3,4];`
   );
 
+  // eslint-disable-next-line no-unused-vars
   const [isDisabled, setIsDisabled] = useState(false);
 
   //fn Main() {\n\tfmt.Print("Hola, mundo!");\n}
+  // eslint-disable-next-line no-unused-vars
   function handleEditorDidMount(editor, monaco) {
     editorRef.current = editor;
   }
@@ -45,6 +47,7 @@ function MiuCode() {
     quickSuggestions: false,
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleChange = (e) => {
     setCode(editorRef.current.getValue());
   };
@@ -117,8 +120,8 @@ function MiuCode() {
         </div>
         <div className=" px-2 text-slate-200 overflow-y-auto h-full pt-2">
           <ScrollableFeed>
-            {messages.map((message, index) => (
-              <p>{message}</p>
+            {messages.map((message, key) => (
+              <pre key={key}><code >{message}</code></pre>
             ))}
           </ScrollableFeed>
         </div>

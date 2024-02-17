@@ -28,27 +28,28 @@ const grammar = {
     { symbol: "C", isTerminal: false },
   ],
   T: [{ regex: /^let$/, isTerminal: true, length: 3 }],
-  L: [{ regex: /^[a-z]$/, isTerminal: true, length: 1 }],
-  D: [{ regex: /^[0-9]$/, isTerminal: true, length: 1 }],
+  L: [{ regex: /^[a-z]+$/, isTerminal: true, length: 1 }],
+  D: [{ regex: /^[0-9]+$/, isTerminal: true, length: 1 }],
   X: [
     { regex: /^,$/, isTerminal: true, length: 1 },
     { symbol: "D", isTerminal: false },
     { symbol: "C", isTerminal: false },
     { symbol: "X", isTerminal: false },
   ],
+  vacio: [],
 };
 const preddict_table = {
-  col: ["let", "a-z", "[", "0-9", "]", ",", ";", "$"],
+  col: [/let/, /[a-z]/, /\[/, /[0-9]/, /\]/, /,/, /;/, /\$/],
   A: ["A", null, null, null, null, null, null, null],
   N: [null, "N", null, null, null, null, null, null],
-  R: [ null, "R", null, "R", null, null, null, null],
+  R: [null, "R", "vacio", null, null, null, null, null],
   M: [null, null, "M", null, null, null, null, null],
   E: [null, null, null, "E", null, null, null, null],
-  C: [null, null, null, "C", null, "C", "C", null],
+  C: [null, null, null, "C", "vacio", "vacio", null, null],
   T: ["T", null, null, null, null, null, null, null],
   L: [null, "L", null, null, null, null, null, null],
   D: [null, null, null, "D", null, null, null, null],
-  X: [null, null, null, null, "X", "X", null, null],
+  X: [null, null, null, null, "vacio", "X", null, null],
 };
 
 export { grammar, preddict_table };
